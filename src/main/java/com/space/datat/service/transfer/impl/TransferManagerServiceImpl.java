@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.math.BigInteger;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,7 +25,8 @@ public class TransferManagerServiceImpl implements TransferManagerService {
 
     /**
      * 保存表数据
-     *  @param tableData
+     *
+     * @param tableData
      * @param objectDS
      * @param databaseObject
      */
@@ -42,14 +44,15 @@ public class TransferManagerServiceImpl implements TransferManagerService {
 
         //分组保存
         for (List<List<TableDataColumn>> batch : batches) {
-            this.saveTableDataBatch(tableData, batch, objectDS,databaseObject);
+            this.saveTableDataBatch(tableData, batch, objectDS, databaseObject);
         }
         log.info("insert table 表名：{},数量：{},时间：{}s", tableData.getTable().getName(), tableData.getRows().size(), (System.currentTimeMillis() - start) / 1000);
     }
 
     /**
      * 保存一组批量数据
-     *  @param tableData
+     *
+     * @param tableData
      * @param batch
      * @param objectDS
      * @param databaseObject
@@ -74,6 +77,10 @@ public class TransferManagerServiceImpl implements TransferManagerService {
                 List<TableDataColumn> row = batch.get(i);
                 for (int j = 0; j < row.size(); j++) {
                     TableDataColumn column = row.get(j);
+                    if (null == column.getValue()) {
+                        pstmt.setNull(j + 1, Types.NULL);
+                        continue;
+                    }
                     int sqlType = column.getField().getDataType();
                     switch (sqlType) {
                         case Types.CHAR:
@@ -109,11 +116,18 @@ public class TransferManagerServiceImpl implements TransferManagerService {
                             break;
 
                         case Types.INTEGER:
-                            pstmt.setInt(j + 1, (java.lang.Integer) column.getValue());
+                            if (column.getValue() instanceof java.lang.Long) {
+                                pstmt.setLong(j + 1, (Long) column.getValue());
+                            }else{
+                                pstmt.setInt(j + 1, (java.lang.Integer) column.getValue());
+                            }
                             break;
-
                         case Types.BIGINT:
-                            pstmt.setLong(j + 1, (java.lang.Long) column.getValue());
+                            if (column.getValue() instanceof java.math.BigInteger) {
+                                pstmt.setLong(j + 1, ((BigInteger) column.getValue()).longValue());
+                            } else {
+                                pstmt.setLong(j + 1, (Long) column.getValue());
+                            }
                             break;
 
                         case Types.REAL:
