@@ -20,4 +20,5 @@ public class Table  {
     private String type;
     private String comment;
     private Long count;
+    private List<String> primaryKey;
 }
