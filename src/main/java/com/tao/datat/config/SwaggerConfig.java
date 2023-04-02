@@ -23,7 +23,7 @@ public class SwaggerConfig {
                 .groupName("数据传输")
                 .enable(true)
                 .select()
-                .apis(RequestHandlerSelectors.basePackage("com.space.datat"))
+                .apis(RequestHandlerSelectors.basePackage("com.tao.datat"))
                 .paths(PathSelectors.any())
                 .build();
     }
