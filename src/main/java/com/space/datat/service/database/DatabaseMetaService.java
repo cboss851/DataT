@@ -30,6 +30,9 @@ public class DatabaseMetaService {
                     .dataTypeName(rs.getString("TYPE_NAME"))
                     .columnSize(rs.getInt("COLUMN_SIZE"))
                     .comment(rs.getString("REMARKS"))
+                    .length(rs.getInt("COLUMN_SIZE"))
+                    .isNull(rs.getString("IS_NULLABLE"))
+                    .defaultValue(rs.getString("COLUMN_DEF"))
                     .build();
             listTableFields.add(tableField);
         }
@@ -55,7 +58,7 @@ public class DatabaseMetaService {
             Statement stmt = connection.createStatement();
             String sql = GenerateSqlFactory
                     .getInstance(table.getDatabase().getType())
-                    .limit(table,limit);
+                    .limit(table, limit);
             ResultSet rs = stmt.executeQuery(sql);
             List<List<TableDataColumn>> rows = new ArrayList<>();
             while (rs.next()) {
@@ -79,7 +82,6 @@ public class DatabaseMetaService {
         }
         return null;
     }
-
 
 
     public Table getTable(DataSource ds, Database database, String schema, String tableName) throws SQLException {
@@ -113,6 +115,14 @@ public class DatabaseMetaService {
                         .type(rs.getString("TABLE_TYPE"))
                         .comment(rs.getString("REMARKS"))
                         .build();
+
+                //主键
+                ResultSet rsPrimaryKeys = databaseMetaData.getPrimaryKeys(connection.getCatalog(), rs.getString("TABLE_SCHEM"), rs.getString("TABLE_NAME"));
+                List<String>  primaryKeys = new ArrayList<>();
+                while (rsPrimaryKeys.next()) {
+                    primaryKeys.add(rsPrimaryKeys.getString("COLUMN_NAME"));
+                }
+                table.setPrimaryKey(primaryKeys);
 
                 //查询表字段
                 List<TableField> listTableFields = this.getTableFields(table, connection, databaseMetaData);
@@ -167,7 +177,7 @@ public class DatabaseMetaService {
             //先获取jdbc连接
             connection = DriverManager.getConnection(ds.getUrl(), ds.getUsername(), ds.getPassword());
             Statement stmt = connection.createStatement();
-            String sql =  GenerateSqlFactory
+            String sql = GenerateSqlFactory
                     .getInstance(database.getType())
                     .count(table);
             ResultSet rs = stmt.executeQuery(sql);
