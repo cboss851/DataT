@@ -52,4 +52,37 @@ public class DatabaseTemplateService {
         }
         return resultList;
     }
+
+    public List<TableField> sqlMetaData(DataSource ds, String sql) {
+        List<TableField> listTableFields = new ArrayList<>();
+        Connection conn = null;
+        Statement stmt = null;
+        ResultSet rs = null;
+        try {
+            conn = DriverManager.getConnection(ds.getUrl(), ds.getUsername(), ds.getPassword());
+            stmt = conn.createStatement();
+            rs = stmt.executeQuery(sql);
+            // 获取ResultSet元数据
+            ResultSetMetaData meta = rs.getMetaData();
+            //指定表元数据信息
+            for (int i = 1; i <= meta.getColumnCount(); i++) {
+                TableField tableField = TableField.builder()
+                        .name(meta.getColumnName(i))
+                        .dataType(meta.getColumnType(i))
+                        .dataTypeName(meta.getColumnTypeName(i))
+                        .columnSize(meta.getColumnDisplaySize(i))
+                        .comment(meta.getColumnLabel(i) + ":" + meta.getColumnClassName(i)+":"+meta.getTableName(i))
+                        .length(meta.getColumnDisplaySize(i))
+                        .isNull(String.valueOf(meta.isNullable(i)))
+                        .build();
+                listTableFields.add(tableField);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            JdbcUtils.closeConnStmtRest(rs, stmt, conn);
+        }
+        return listTableFields;
+    }
 }

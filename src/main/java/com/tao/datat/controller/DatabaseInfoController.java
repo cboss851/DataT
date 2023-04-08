@@ -4,6 +4,7 @@ import com.tao.commons.result.ResponseResult;
 import com.tao.datat.service.database.DataSource;
 import com.tao.datat.service.database.Database;
 import com.tao.datat.service.database.Table;
+import com.tao.datat.service.database.TableField;
 import com.tao.datat.service.databaseinfo.DatabaseConstant;
 import com.tao.datat.service.databaseinfo.DatabaseInfoService;
 import com.tao.datat.service.databaseinfo.dto.*;
@@ -50,6 +51,12 @@ public class DatabaseInfoController {
     @PostMapping("/tableCountList")
     public ResponseResult<List<TableCountListRsp>> tableCountList(@Validated @RequestBody TableCountListReq req) throws SQLException {
         return ResponseResult.successData(databaseInfoService.queryTableCount(req));
+    }
+
+    @ApiOperation("SQL-MetaData")
+    @PostMapping("/sqlMetaData")
+    public ResponseResult<List<TableField>> sqlMetaData(@Validated @RequestBody MetaDataListReq req) throws SQLException {
+        return ResponseResult.successData(databaseInfoService.sqlMetaData(req));
     }
 
     @ApiOperation("SQL-JSON")

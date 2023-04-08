@@ -68,4 +68,9 @@ public class DatabaseInfoServiceImpl implements DatabaseInfoService {
     public List<LinkedHashMap<String, Object>> tableDataList(TableDataListReq req) {
         return databaseTemplateService.queryForList(req.getDs(), req.getSql());
     }
+
+    @Override
+    public List<TableField> sqlMetaData(MetaDataListReq req) {
+        return databaseTemplateService.sqlMetaData(req.getDs(), req.getSql());
+    }
 }

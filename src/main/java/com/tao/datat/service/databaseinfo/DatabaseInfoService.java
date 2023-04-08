@@ -3,6 +3,7 @@ package com.tao.datat.service.databaseinfo;
 import com.tao.datat.service.database.DataSource;
 import com.tao.datat.service.database.Database;
 import com.tao.datat.service.database.Table;
+import com.tao.datat.service.database.TableField;
 import com.tao.datat.service.databaseinfo.dto.*;
 
 import java.sql.SQLException;
@@ -19,4 +20,6 @@ public interface DatabaseInfoService {
     List<TableCountListRsp> queryTableCount(TableCountListReq req) throws SQLException;
 
     List<LinkedHashMap<String,Object>> tableDataList(TableDataListReq req);
+
+    List<TableField> sqlMetaData(MetaDataListReq req);
 }
