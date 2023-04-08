@@ -14,6 +14,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class DatabaseTemplateService {
+    private final DatabaseMetaService databaseMetaService;
 
     /**
      * sql语句查询
@@ -66,18 +67,9 @@ public class DatabaseTemplateService {
             ResultSetMetaData meta = rs.getMetaData();
             //指定表元数据信息
             for (int i = 1; i <= meta.getColumnCount(); i++) {
-                TableField tableField = TableField.builder()
-                        .name(meta.getColumnName(i))
-                        .dataType(meta.getColumnType(i))
-                        .dataTypeName(meta.getColumnTypeName(i))
-                        .columnSize(meta.getColumnDisplaySize(i))
-                        .comment(meta.getColumnLabel(i) + ":" + meta.getColumnClassName(i)+":"+meta.getTableName(i))
-                        .length(meta.getColumnDisplaySize(i))
-                        .isNull(String.valueOf(meta.isNullable(i)))
-                        .build();
+                TableField tableField = databaseMetaService.getTableField(ds, meta.getTableName(i), meta.getColumnName(i));
                 listTableFields.add(tableField);
             }
-
         } catch (Exception e) {
             e.printStackTrace();
         } finally {

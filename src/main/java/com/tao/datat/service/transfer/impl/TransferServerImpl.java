@@ -36,7 +36,7 @@ public class TransferServerImpl implements TransferService {
         for (TransferReq.TableReq tableReq : tables) {
             try {
                 //查询表元数据信息
-                Table table = databaseMetaService.getTable(sourceDS, databaseSource, "", tableReq.getName());
+                Table table = databaseMetaService.getTable(sourceDS, "", tableReq.getName());
                 log.info("table:{}", table);
 
                 //查询表数据

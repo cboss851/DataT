@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -18,6 +19,10 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class DatabaseMetaService {
+    //表缓存
+    private HashMap<String, Table> tableCached = new HashMap<>();
+    //Database缓存
+    private HashMap<String, Database> databaseCached = new HashMap<>();
 
     public List<TableField> getTableFields(Table table, Connection connection, DatabaseMetaData databaseMetaData) throws SQLException {
         List<TableField> listTableFields = new ArrayList<>();
@@ -83,9 +88,21 @@ public class DatabaseMetaService {
         return null;
     }
 
-
-    public Table getTable(DataSource ds, Database database, String schema, String tableName) throws SQLException {
-        return getTables(ds, database, schema, tableName).get(0);
+    /**
+     * 查询表元数据信息
+     *
+     * @param ds
+     * @param tableName
+     * @return
+     */
+    public Table getTable(DataSource ds, String schema, String tableName) throws SQLException {
+        if (tableCached.containsKey(tableName)) {
+            return tableCached.get(tableName);
+        } else {
+            Table table = getTables(ds, schema, tableName).get(0);
+            tableCached.put(tableName, table);
+            return table;
+        }
     }
 
     /**
@@ -95,7 +112,7 @@ public class DatabaseMetaService {
      * @param tableName
      * @return
      */
-    public List<Table> getTables(DataSource ds, Database database, String schema, String tableName) throws SQLException {
+    public List<Table> getTables(DataSource ds, String schema, String tableName) throws SQLException {
         Connection connection = null;
         try {
             //装载驱动类
@@ -105,6 +122,7 @@ public class DatabaseMetaService {
             //从connection中获取数据库的元数据
             DatabaseMetaData databaseMetaData = connection.getMetaData();
             ResultSet rs = databaseMetaData.getTables(connection.getCatalog(), "%" + schema + "%", "%" + tableName + "%", null);
+            Database database = this.getDatabase(ds);
             log.info("tableName: " + tableName);
             List<Table> tables = new ArrayList<>();
             while (rs.next()) {
@@ -118,7 +136,7 @@ public class DatabaseMetaService {
 
                 //主键
                 ResultSet rsPrimaryKeys = databaseMetaData.getPrimaryKeys(connection.getCatalog(), rs.getString("TABLE_SCHEM"), rs.getString("TABLE_NAME"));
-                List<String>  primaryKeys = new ArrayList<>();
+                List<String> primaryKeys = new ArrayList<>();
                 while (rsPrimaryKeys.next()) {
                     primaryKeys.add(rsPrimaryKeys.getString("COLUMN_NAME"));
                 }
@@ -139,12 +157,10 @@ public class DatabaseMetaService {
         return null;
     }
 
-    //数据库信息
-    public Database getDatabase(String url, Connection connection, DatabaseMetaData databaseMetaData) throws SQLException {
-        return Database.builder().name(connection.getCatalog()).url(url).type(DatabaseTypeEnum.getEnumByCode(databaseMetaData.getDatabaseProductName())).productVersion(databaseMetaData.getDatabaseProductVersion()).driverName(databaseMetaData.getDriverName()).driverVersion(databaseMetaData.getDatabaseProductVersion()).driverClassName(databaseMetaData.getDriverName()).build();
-    }
-
-    public Database getDatabase(DataSource ds) throws SQLException {
+    public Database getDatabase(DataSource ds) {
+        if (databaseCached.containsKey(ds.getUrl())) {
+            return databaseCached.get(ds.getUrl());
+        }
         Connection connection = null;
         try {
             //装载驱动类
@@ -153,7 +169,7 @@ public class DatabaseMetaService {
             connection = DriverManager.getConnection(ds.getUrl(), ds.getUsername(), ds.getPassword());
             //从connection中获取数据库的元数据
             DatabaseMetaData databaseMetaData = connection.getMetaData();
-            return Database.builder().name(connection.getCatalog())
+            Database database = Database.builder().name(connection.getCatalog())
                     .url(ds.getUrl())
                     .type(DatabaseTypeEnum.getEnumByCode(databaseMetaData.getDatabaseProductName()))
                     .productVersion(databaseMetaData.getDatabaseProductVersion())
@@ -161,6 +177,8 @@ public class DatabaseMetaService {
                     .driverVersion(databaseMetaData.getDatabaseProductVersion())
                     .driverClassName(databaseMetaData.getDriverName())
                     .build();
+            databaseCached.put(ds.getUrl(), database);
+            return database;
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -169,7 +187,9 @@ public class DatabaseMetaService {
         return null;
     }
 
-    public Long getTableCount(DataSource ds, Database database, Table table) {
+    public Long getTableCount(DataSource ds, Table table) {
+        //数据库信息
+        Database database = this.getDatabase(ds);
         Connection connection = null;
         try {
             //装载驱动类
@@ -191,5 +211,10 @@ public class DatabaseMetaService {
             JdbcUtils.closeConn(connection);
         }
         return null;
+    }
+
+    public TableField getTableField(DataSource ds, String tableName, String fieldName) throws SQLException {
+        Table table = this.getTable(ds, "", tableName);
+        return table.getField(fieldName);
     }
 }

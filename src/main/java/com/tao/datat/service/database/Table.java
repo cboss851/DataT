@@ -21,4 +21,13 @@ public class Table  {
     private String comment;
     private Long count;
     private List<String> primaryKey;
+
+    public TableField getField(String fieldName){
+        for (TableField field : fields) {
+            if(fieldName.equalsIgnoreCase(field.getName())){
+                return field;
+            }
+        }
+        return null;
+    }
 }
